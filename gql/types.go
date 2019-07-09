@@ -55,10 +55,10 @@ var Vendor = graphql.NewObject(graphql.ObjectConfig{
 			Type: graphql.String,
 		},
 		"created_at": &graphql.Field{
-			Type: scalar.SpecialDateScalar,
+			Type: graphql.DateTime,
 		},
 		"updated_at": &graphql.Field{
-			Type: scalar.SpecialDateScalar,
+			Type: graphql.DateTime,
 		},
 		"mongo_id": &graphql.Field{
 			Type: scalar.NullStringScalar,
@@ -76,7 +76,7 @@ var Vendor = graphql.NewObject(graphql.ObjectConfig{
 					v       = p.Context.Value
 					c       = v("client").(*Client)
 					loaders = v("loaders").(map[string]*dataloader.Loader)
-					vendor  = p.Source.(*postgres.Vendor)
+					vendor  = p.Source.(postgres.Vendor)
 					key     = NewResolverKey(vendor.ID.String(), c)
 				)
 				thunk := loaders["GetVendorProducts"].Load(p.Context, key)
@@ -88,7 +88,7 @@ var Vendor = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-// User describes a graphql object containing a User
+// Product describes a graphql object containing a Product
 var Product = graphql.NewObject(
 	graphql.ObjectConfig{
 		Name: "Product",
@@ -97,10 +97,10 @@ var Product = graphql.NewObject(
 				Type: graphql.String,
 			},
 			"created_at": &graphql.Field{
-				Type: scalar.SpecialDateScalar,
+				Type: graphql.DateTime,
 			},
 			"updated_at": &graphql.Field{
-				Type: scalar.SpecialDateScalar,
+				Type: graphql.DateTime,
 			},
 			"mongo_id": &graphql.Field{
 				Type: scalar.NullStringScalar,
@@ -121,6 +121,51 @@ var Product = graphql.NewObject(
 				Type: LanguageJson,
 			},
 			"brand_names": &graphql.Field{
+				Type: LanguageJson,
+			},
+			"names": &graphql.Field{
+				Type: LanguageJson,
+			},
+			"optional_data": &graphql.Field{
+				Type: LanguageJson,
+			},
+			"vendor_id": &graphql.Field{
+				Type: scalar.NullStringScalar,
+			},
+			"supplier_id": &graphql.Field{
+				Type: scalar.NullStringScalar,
+			},
+		},
+	},
+)
+
+// Store describes a graphql object containing a Store
+var Store = graphql.NewObject(
+	graphql.ObjectConfig{
+		Name: "Product",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"created_at": &graphql.Field{
+				Type: scalar.SpecialDateScalar,
+			},
+			"updated_at": &graphql.Field{
+				Type: scalar.SpecialDateScalar,
+			},
+			"mongo_id": &graphql.Field{
+				Type: scalar.NullStringScalar,
+			},
+			"code": &graphql.Field{
+				Type: scalar.NullStringScalar,
+			},
+			"name": &graphql.Field{
+				Type: scalar.NullStringScalar,
+			},
+			"model": &graphql.Field{
+				Type: LanguageJson,
+			},
+			"address": &graphql.Field{
 				Type: LanguageJson,
 			},
 			"names": &graphql.Field{

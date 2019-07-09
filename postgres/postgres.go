@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"go-graphql-cloud-api/scalar"
-	"time"
 
 	// postgres driver
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 )
@@ -44,19 +43,14 @@ func ConnString(host string, port int, user string, password string, dbName stri
 	)
 }
 
-// GetVendors is called within our user query for graphql
 func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 	// Create Vendor struct for holding each row's data
 	var r Product
 	// Create slice of Users for our response
 	products := []Product{}
-	// ids := []string{"06fddf65-27a3-4568-8995-a06a3fb80382"}
-	// ids, _ := NewStringArray(vendorIDs).Value()
-	query := fmt.Sprintf(`SELECT product.* FROM product JOIN vendor ON product.vendor_id = vendor.id`)
-	fmt.Println(query)
 	// Make query with our stmt, passing in phoneDeviceID argument
 	//rows, err := d.Query("SELECT vendor.*, array_to_json(array_agg(row_to_json(product.*))) AS products FROM vendor JOIN product ON product.vendor_id = vendor.id GROUP BY vendor.id WHERE vendor.id IN $1", vendorIDs)
-	rows, err := d.Query(query)
+	rows, err := d.Query(`SELECT product.* FROM product JOIN vendor ON product.vendor_id = vendor.id WHERE vendor.id = ANY($1)`, pq.Array(vendorIDs))
 
 	if err != nil {
 		return products, fmt.Errorf("GetVendorProducts Query Err: %+v", err)
@@ -64,16 +58,14 @@ func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 
 	// Copy the columns from row into the values pointed at by r (Product)
 	for rows.Next() {
-		var createdAt time.Time
-		var updatedAt time.Time
 		var descriptions string
 		var brandNames string
 		var names string
 		var optionalData string
 		err = rows.Scan(
 			&r.ID,
-			&createdAt,
-			&updatedAt,
+			&r.CreatedAt,
+			&r.UpdatedAt,
 			&r.MongoID,
 			&r.Photo,
 			&r.Code,
@@ -86,8 +78,6 @@ func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 			&r.VendorID,
 			&r.SupplierID,
 		)
-		r.CreatedAt = *scalar.NewSpecialDate(createdAt)
-		r.UpdatedAt = *scalar.NewSpecialDate(updatedAt)
 		descriptionErr := json.Unmarshal([]byte(descriptions), &r.Descriptions)
 		brandNamesErr := json.Unmarshal([]byte(brandNames), &r.BrandNames)
 		namesErr := json.Unmarshal([]byte(names), &r.Names)
@@ -107,4 +97,34 @@ func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 		products = append(products, r)
 	}
 	return products, nil
+}
+func (d *Db) GetVendors(vendorIDs []uuid.UUID) ([]Vendor, error) {
+	// Create Vendor struct for holding each row's data
+	var r Vendor
+	// Create slice of Users for our response
+	vendors := []Vendor{}
+	// Make query with our stmt, passing in phoneDeviceID argument
+	//rows, err := d.Query("SELECT vendor.*, array_to_json(array_agg(row_to_json(product.*))) AS products FROM vendor JOIN product ON product.vendor_id = vendor.id GROUP BY vendor.id WHERE vendor.id IN $1", vendorIDs)
+	rows, err := d.Query(`SELECT * FROM vendor WHERE vendor.id = ANY($1)`, pq.Array(vendorIDs))
+
+	if err != nil {
+		return vendors, fmt.Errorf("GetVendors Query Err: %+v", err)
+	}
+
+	// Copy the columns from row into the values pointed at by r (Vendors)
+	for rows.Next() {
+		err = rows.Scan(
+			&r.ID,
+			&r.CreatedAt,
+			&r.UpdatedAt,
+			&r.MongoID,
+			&r.Name,
+			&r.Description,
+		)
+		if err != nil {
+			return vendors, fmt.Errorf("Error scanning rows: %+v", err)
+		}
+		vendors = append(vendors, r)
+	}
+	return vendors, nil
 }

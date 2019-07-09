@@ -2,6 +2,9 @@ package gql
 
 import (
 	"go-graphql-cloud-api/postgres"
+
+	"github.com/graph-gophers/dataloader"
+	"github.com/graphql-go/graphql"
 )
 
 // Resolver struct holds a connection to our database
@@ -14,3 +17,16 @@ type Resolver struct {
 // 	vendors := r.db.GetVendorProducts()
 // 	return vendors, nil
 // }
+func (r *Resolver) VendorResolver(p graphql.ResolveParams) (interface{}, error) {
+	var (
+		v       = p.Context.Value
+		c       = v("client").(*Client)
+		loaders = v("loaders").(map[string]*dataloader.Loader)
+		id      = p.Args["id"].(string)
+		key     = NewResolverKey(id, c)
+	)
+	thunk := loaders["GetVendors"].Load(p.Context, key)
+	return func() (interface{}, error) {
+		return thunk()
+	}, nil
+}
