@@ -151,3 +151,16 @@ func (d *Db) GetVendors(vendorIDs []uuid.UUID) ([]Vendor, error) {
 	}
 	return vendors, nil
 }
+
+func (d *Db) EditVendors(vendorID uuid.UUID) error {
+	// Make query with our stmt, passing in phoneDeviceID argument
+	//rows, err := d.Query("SELECT vendor.*, array_to_json(array_agg(row_to_json(product.*))) AS products FROM vendor JOIN product ON product.vendor_id = vendor.id GROUP BY vendor.id WHERE vendor.id IN $1", vendorIDs)
+	rows, err := d.Exec(`UPDATE vendor SET description = $1 WHERE id = $2 `, "testssssss", vendorID)
+	fmt.Println(rows.LastInsertId)
+
+	if err != nil {
+		return fmt.Errorf("GetVendors Query Err: %+v", err)
+	}
+
+	return nil
+}

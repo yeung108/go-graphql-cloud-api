@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/graphql-go/graphql"
+	uuid "github.com/satori/go.uuid"
 )
 
 // Resolver struct holds a connection to our database
@@ -29,4 +30,13 @@ func (r *Resolver) VendorResolver(p graphql.ResolveParams) (interface{}, error) 
 	return func() (interface{}, error) {
 		return thunk()
 	}, nil
+}
+
+func (r *Resolver) EditVendorResolver(p graphql.ResolveParams) (interface{}, error) {
+	k, _ := uuid.FromString(p.Args["id"].(string))
+	err := r.db.EditVendors(k)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
