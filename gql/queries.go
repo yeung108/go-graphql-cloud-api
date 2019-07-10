@@ -50,6 +50,38 @@ func GetVendorProductsBatchFn(ctx context.Context, keys dataloader.Keys) []*data
 	return results
 }
 
+func GetVendorStoresBatchFn(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+	handleError := func(err error) []*dataloader.Result {
+		var results []*dataloader.Result
+		var result dataloader.Result
+		result.Error = err
+		results = append(results, &result)
+		return results
+	}
+	var vendorIDs []uuid.UUID
+	for _, key := range keys {
+		k, err := uuid.FromString(key.String())
+		if err != nil {
+			fmt.Println("vendorIDs key error: %v ", err)
+		}
+		vendorIDs = append(vendorIDs, k)
+	}
+	stores, err := keys[0].(*ResolverKey).client().resolver().db.GetVendorStores(vendorIDs)
+	if err != nil {
+		return handleError(err)
+	}
+
+	var results []*dataloader.Result
+	result := dataloader.Result{
+		Data:  stores,
+		Error: nil,
+	}
+	results = append(results, &result)
+
+	log.Printf("[GetVendorStoresBatchFn] batch size: %d", len(results))
+	return results
+}
+
 func GetVendorsBatchFn(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
 	handleError := func(err error) []*dataloader.Result {
 		var results []*dataloader.Result
@@ -89,6 +121,7 @@ func NewRoot(db *postgres.Db) *Root {
 	var loaders = make(map[string]*dataloader.Loader, 1)
 	var client = Client{Resolver: &resolver}
 	loaders["GetVendorProducts"] = dataloader.NewBatchedLoader(GetVendorProductsBatchFn)
+	loaders["GetVendorStores"] = dataloader.NewBatchedLoader(GetVendorStoresBatchFn)
 	loaders["GetVendors"] = dataloader.NewBatchedLoader(GetVendorsBatchFn)
 	ctx := context.WithValue(context.Background(), "loaders", loaders)
 	ctx = context.WithValue(ctx, "client", &client)

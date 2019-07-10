@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	// postgres driver
@@ -58,10 +57,6 @@ func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 
 	// Copy the columns from row into the values pointed at by r (Product)
 	for rows.Next() {
-		var descriptions string
-		var brandNames string
-		var names string
-		var optionalData string
 		err = rows.Scan(
 			&r.ID,
 			&r.CreatedAt,
@@ -71,33 +66,61 @@ func (d *Db) GetVendorProducts(vendorIDs []uuid.UUID) ([]Product, error) {
 			&r.Code,
 			&r.IsVirtualProduct,
 			&r.Barcode,
-			&descriptions,
-			&brandNames,
-			&names,
-			&optionalData,
+			&r.Descriptions,
+			&r.BrandNames,
+			&r.Names,
+			&r.OptionalData,
 			&r.VendorID,
 			&r.SupplierID,
 		)
-		descriptionErr := json.Unmarshal([]byte(descriptions), &r.Descriptions)
-		brandNamesErr := json.Unmarshal([]byte(brandNames), &r.BrandNames)
-		namesErr := json.Unmarshal([]byte(names), &r.Names)
-		optionalDataErr := json.Unmarshal([]byte(optionalData), &r.OptionalData)
-		// productErr := json.Unmarshal([]byte(products), &r.Products)
 		if err != nil {
 			return products, fmt.Errorf("Error scanning rows: %+v", err)
-		} else if descriptionErr != nil {
-			return products, fmt.Errorf("Error scanning descriptions: %+v", descriptionErr)
-		} else if brandNamesErr != nil {
-			return products, fmt.Errorf("Error scanning brandNames: %+v", brandNamesErr)
-		} else if namesErr != nil {
-			return products, fmt.Errorf("Error scanning names: %+v", namesErr)
-		} else if optionalDataErr != nil {
-			return products, fmt.Errorf("Error scanning optionalData: %+v", optionalDataErr)
 		}
 		products = append(products, r)
 	}
 	return products, nil
 }
+
+func (d *Db) GetVendorStores(vendorIDs []uuid.UUID) ([]Store, error) {
+	// Create Store struct for holding each row's data
+	var r Store
+	// Create slice of Stores for our response
+	stores := []Store{}
+	// Make query with our stmt, passing in phoneDeviceID argument
+	//rows, err := d.Query("SELECT vendor.*, array_to_json(array_agg(row_to_json(product.*))) AS products FROM vendor JOIN product ON product.vendor_id = vendor.id GROUP BY vendor.id WHERE vendor.id IN $1", vendorIDs)
+	rows, err := d.Query(`SELECT store.* FROM store JOIN vendor ON store.vendor_id = vendor.id WHERE vendor.id = ANY($1)`, pq.Array(vendorIDs))
+
+	if err != nil {
+		return stores, fmt.Errorf("GetVendorStores Query Err: %+v", err)
+	}
+
+	// Copy the columns from row into the values pointed at by r (Store)
+	for rows.Next() {
+		err = rows.Scan(
+			&r.ID,
+			&r.CreatedAt,
+			&r.UpdatedAt,
+			&r.MongoID,
+			&r.Code,
+			&r.Name,
+			&r.Model,
+			&r.Address,
+			&r.LastOnlineAt,
+			&r.LastGet,
+			&r.LastSync,
+			&r.LastRefill,
+			&r.LastReset,
+			&r.UnsubmittedOrderCount,
+			&r.VendorID,
+		)
+		if err != nil {
+			return stores, fmt.Errorf("Error scanning rows: %+v", err)
+		}
+		stores = append(stores, r)
+	}
+	return stores, nil
+}
+
 func (d *Db) GetVendors(vendorIDs []uuid.UUID) ([]Vendor, error) {
 	// Create Vendor struct for holding each row's data
 	var r Vendor

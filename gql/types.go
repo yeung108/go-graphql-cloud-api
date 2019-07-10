@@ -43,8 +43,8 @@ func (rk *ResolverKey) Raw() interface{} {
 var LanguageJson = graphql.NewObject(graphql.ObjectConfig{
 	Name: "LanguageJson",
 	Fields: graphql.Fields{
-		"en": &graphql.Field{Type: graphql.String},
-		"zh": &graphql.Field{Type: graphql.String},
+		"en": &graphql.Field{Type: scalar.NullScalar},
+		"zh": &graphql.Field{Type: scalar.NullScalar},
 	},
 })
 
@@ -52,22 +52,22 @@ var Vendor = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Vendor",
 	Fields: graphql.Fields{
 		"id": &graphql.Field{
-			Type: graphql.String,
+			Type: scalar.NullScalar,
 		},
 		"created_at": &graphql.Field{
-			Type: graphql.DateTime,
+			Type: scalar.NullScalar,
 		},
 		"updated_at": &graphql.Field{
-			Type: graphql.DateTime,
+			Type: scalar.NullScalar,
 		},
 		"mongo_id": &graphql.Field{
-			Type: scalar.NullStringScalar,
+			Type: scalar.NullScalar,
 		},
 		"name": &graphql.Field{
-			Type: scalar.NullStringScalar,
+			Type: scalar.NullScalar,
 		},
 		"description": &graphql.Field{
-			Type: scalar.NullStringScalar,
+			Type: scalar.NullScalar,
 		},
 		"products": &graphql.Field{
 			Type: graphql.NewList(Product),
@@ -85,6 +85,22 @@ var Vendor = graphql.NewObject(graphql.ObjectConfig{
 				}, nil
 			},
 		},
+		"stores": &graphql.Field{
+			Type: graphql.NewList(Store),
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				var (
+					v       = p.Context.Value
+					c       = v("client").(*Client)
+					loaders = v("loaders").(map[string]*dataloader.Loader)
+					vendor  = p.Source.(postgres.Vendor)
+					key     = NewResolverKey(vendor.ID.String(), c)
+				)
+				thunk := loaders["GetVendorStores"].Load(p.Context, key)
+				return func() (interface{}, error) {
+					return thunk()
+				}, nil
+			},
+		},
 	},
 })
 
@@ -94,28 +110,28 @@ var Product = graphql.NewObject(
 		Name: "Product",
 		Fields: graphql.Fields{
 			"id": &graphql.Field{
-				Type: graphql.String,
+				Type: scalar.NullScalar,
 			},
 			"created_at": &graphql.Field{
-				Type: graphql.DateTime,
+				Type: scalar.NullScalar,
 			},
 			"updated_at": &graphql.Field{
-				Type: graphql.DateTime,
+				Type: scalar.NullScalar,
 			},
 			"mongo_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"photo": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"code": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"is_virtual_product": &graphql.Field{
-				Type: graphql.Boolean,
+				Type: scalar.NullScalar,
 			},
 			"barcode": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"descriptions": &graphql.Field{
 				Type: LanguageJson,
@@ -130,10 +146,10 @@ var Product = graphql.NewObject(
 				Type: LanguageJson,
 			},
 			"vendor_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"supplier_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 		},
 	},
@@ -142,43 +158,52 @@ var Product = graphql.NewObject(
 // Store describes a graphql object containing a Store
 var Store = graphql.NewObject(
 	graphql.ObjectConfig{
-		Name: "Product",
+		Name: "Store",
 		Fields: graphql.Fields{
 			"id": &graphql.Field{
-				Type: graphql.String,
+				Type: scalar.NullScalar,
 			},
 			"created_at": &graphql.Field{
-				Type: scalar.SpecialDateScalar,
+				Type: scalar.NullScalar,
 			},
 			"updated_at": &graphql.Field{
-				Type: scalar.SpecialDateScalar,
+				Type: scalar.NullScalar,
 			},
 			"mongo_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"code": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"name": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 			"model": &graphql.Field{
-				Type: LanguageJson,
+				Type: scalar.NullScalar,
 			},
 			"address": &graphql.Field{
-				Type: LanguageJson,
+				Type: scalar.NullScalar,
 			},
-			"names": &graphql.Field{
-				Type: LanguageJson,
+			"last_online_at": &graphql.Field{
+				Type: scalar.NullScalar,
 			},
-			"optional_data": &graphql.Field{
-				Type: LanguageJson,
+			"last_get": &graphql.Field{
+				Type: scalar.NullScalar,
+			},
+			"last_refill": &graphql.Field{
+				Type: scalar.NullScalar,
+			},
+			"last_reset": &graphql.Field{
+				Type: scalar.NullScalar,
+			},
+			"last_sync": &graphql.Field{
+				Type: scalar.NullScalar,
+			},
+			"unsubmitted_order_count": &graphql.Field{
+				Type: scalar.NullScalar,
 			},
 			"vendor_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
-			},
-			"supplier_id": &graphql.Field{
-				Type: scalar.NullStringScalar,
+				Type: scalar.NullScalar,
 			},
 		},
 	},
