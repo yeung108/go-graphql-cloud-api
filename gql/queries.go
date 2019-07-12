@@ -57,8 +57,8 @@ func NewRoot(db *postgres.Db) *Root {
 						// Slice of Vendor type which can be found in types.go
 						Type: Vendor,
 						Args: graphql.FieldConfigArgument{
-							"id": &graphql.ArgumentConfig{
-								Type: graphql.String,
+							"vendor": &graphql.ArgumentConfig{
+								Type: graphql.NewInputObject(VendorArgs),
 							},
 						},
 						Resolve: resolver.EditVendorResolver,
